@@ -1,70 +1,74 @@
--- Create the ScreenGui
-local player = game.Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local UserInputService = game:GetService("UserInputService")
+local Player = game.Players.LocalPlayer
+local Mouse = Player:GetMouse()
 
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "DraggableMenu"
-screenGui.Parent = playerGui
+-- GUI setup
+local ScreenGui = Instance.new("ScreenGui", Player:WaitForChild("PlayerGui"))
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 750, 0, 500)
+Main.Position = UDim2.new(0.5, -375, 0.5, -250)
+Main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Main.Visible = false
 
--- Create the main frame
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 150)
-frame.Position = UDim2.new(0.5, -100, 0.5, -75)
-frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-frame.BorderSizePixel = 0
-frame.Parent = screenGui
+-- Left tabs
+local Tabs = {"Aimbot","Visual","Misc","Settings"}
+local TabFrame = Instance.new("Frame", Main)
+TabFrame.Size = UDim2.new(0, 100, 1, 0)
+TabFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
 
--- Create a title bar
-local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 30)
-titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-titleBar.Parent = frame
+local SelectedTab = "Aimbot"
+for i, v in pairs(Tabs) do
+    local b = Instance.new("TextButton", TabFrame)
+    b.Text = v
+    b.Size = UDim2.new(1, 0, 0, 50)
+    b.Position = UDim2.new(0,0,0,(i-1)*50)
+    b.BackgroundColor3 = Color3.fromRGB(50,50,50)
+    b.MouseButton1Click:Connect(function() SelectedTab = v end)
+end
 
-local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, 0, 1, 0)
-titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "Draggable Menu"
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.Font = Enum.Font.SourceSansBold
-titleLabel.TextSize = 18
-titleLabel.Parent = titleBar
+-- Subtabs and checkboxes
+local Subtabs = {
+    Aimbot = {"AutoShoot","AimLock"},
+    Visual = {"ESP","Chams","Tracers"},
+    Misc = {"Bhop"},
+    Settings = {"FPSBoost"}
+}
+local CheckboxStates = {}
+local ContentFrame = Instance.new("Frame", Main)
+ContentFrame.Size = UDim2.new(1, -100, 1, 0)
+ContentFrame.Position = UDim2.new(0, 100, 0, 0)
+ContentFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 
--- Draggable functionality
-local dragging = false
-local dragInput, mousePos, framePos
+local function DrawContent()
+    ContentFrame:ClearAllChildren()
+    local y = 0
+    for i, sub in pairs(Subtabs[SelectedTab]) do
+        local t = Instance.new("TextLabel", ContentFrame)
+        t.Text = sub
+        t.Size = UDim2.new(0,200,0,30)
+        t.Position = UDim2.new(0,10,0,y)
+        t.TextColor3 = Color3.fromRGB(255,255,255)
+        local cb = Instance.new("TextButton", ContentFrame)
+        cb.Text = CheckboxStates[sub] and "✅" or "❌"
+        cb.Size = UDim2.new(0,30,0,30)
+        cb.Position = UDim2.new(0,220,0,y)
+        cb.MouseButton1Click:Connect(function()
+            CheckboxStates[sub] = not CheckboxStates[sub]
+            cb.Text = CheckboxStates[sub] and "✅" or "❌"
+        end)
+        y = y + 40
+    end
+end
 
-titleBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		mousePos = input.Position
-		framePos = frame.Position
+-- Update every frame
+game:GetService("RunService").RenderStepped:Connect(DrawContent)
 
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
-end)
-
-titleBar.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement then
-		dragInput = input
-	end
-end)
-
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
-		local delta = input.Position - mousePos
-		frame.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X,
-			framePos.Y.Scale, framePos.Y.Offset + delta.Y)
-	end
-end)
-
--- Delete menu on DEL key press
-game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if input.KeyCode == Enum.KeyCode.Delete then
-		screenGui:Destroy()
-	end
+-- Toggle menu
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.KeyCode == Enum.KeyCode.Insert then
+        Main.Visible = not Main.Visible
+    elseif input.KeyCode == Enum.KeyCode.Delete then
+        ScreenGui:Destroy()
+    end
 end)
