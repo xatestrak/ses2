@@ -1,78 +1,128 @@
-local uis = game:GetService("UserInputService")
-local rs = game:GetService("RunService")
-local plr = game.Players.LocalPlayer
+local library = {}
+local UIS = game:GetService("UserInputService")
+local Run = game:GetService("RunService")
+local mouse = game.Players.LocalPlayer:GetMouse()
 
-local ScreenGui = Instance.new("ScreenGui", plr:WaitForChild("PlayerGui"))
-local Main = Instance.new("Frame", ScreenGui)
-Main.Size, Main.Position, Main.BackgroundColor3, Main.Visible = UDim2.new(0,750,0,500), UDim2.new(0.5,-375,0.5,-250), Color3.fromRGB(30,30,30), true
+local menu = Instance.new("ScreenGui", game.CoreGui)
+menu.Name = "EclipseGUI"
 
--- Draggable
-Main.Active = true
-Main.Draggable = true
+local frame = Instance.new("Frame", menu)
+frame.Size = UDim2.new(0,750,0,500)
+frame.Position = UDim2.new(0.5,-375,0.5,-250)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.Active = true
+frame.Draggable = true
 
--- Top-left label
-local lbl = Instance.new("TextLabel", Main)
-lbl.Text, lbl.Position, lbl.Size, lbl.TextColor3, lbl.Font, lbl.TextScaled = "Eclipse", UDim2.new(0,10,0,10), UDim2.new(0,200,0,40), Color3.new(1,1,1), Enum.Font.SourceSansBold, true
-local beta = Instance.new("TextLabel", Main)
-beta.Text, beta.Position, beta.Size, beta.TextColor3, beta.Font, beta.TextScaled = "beta", UDim2.new(0,80,0,20), UDim2.new(0,50,0,20), Color3.fromRGB(200,200,200), Enum.Font.SourceSans, true
+local title = Instance.new("TextLabel", frame)
+title.Text = "Eclipse"
+title.Font = Enum.Font.GothamBold
+title.TextSize = 30
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.BackgroundTransparency = 1
+title.Position = UDim2.new(0,10,0,5)
+title.Size = UDim2.new(0,200,0,40)
+
+local subtitle = Instance.new("TextLabel", frame)
+subtitle.Text = "beta"
+subtitle.Font = Enum.Font.Gotham
+subtitle.TextSize = 14
+subtitle.TextColor3 = Color3.fromRGB(200,200,200)
+subtitle.BackgroundTransparency = 1
+subtitle.Position = UDim2.new(0,110,0,15)
+subtitle.Size = UDim2.new(0,50,0,20)
 
 -- Tabs
-local Tabs = {"Aimbot","Visual","Misc","Settings"}
-local TabFrame = Instance.new("Frame", Main)
-TabFrame.Size, TabFrame.Position, TabFrame.BackgroundColor3 = UDim2.new(0,100,1,0), UDim2.new(0,0,0,0), Color3.fromRGB(40,40,40)
-local SelectedTab, SelectedSubtab = "Aimbot","General"
+local tabs = {"Aimbot","Visual","Misc","Settings"}
+local left = Instance.new("Frame", frame)
+left.Size = UDim2.new(0,100,1,0)
+left.Position = UDim2.new(0,0,0,0)
+left.BackgroundColor3 = Color3.fromRGB(20,20,20)
 
-local Subtabs = {
-    Aimbot = {"General","Other"},
-    Visual = {"ESP","World","Other"},
-    Misc = {"Misc"},
-    Settings = {"Settings"}
-}
-local CheckboxStates = {}
-
-for i,v in pairs(Tabs) do
-    local b = Instance.new("TextButton", TabFrame)
-    b.Text, b.Size, b.Position, b.BackgroundColor3 = v, UDim2.new(1,0,0,50), UDim2.new(0,0,0,(i-1)*50), Color3.fromRGB(50,50,50)
-    b.MouseButton1Click:Connect(function() SelectedTab=v SelectedSubtab=Subtabs[v][1] end)
+local tabButtons = {}
+for i,v in pairs(tabs) do
+    local b = Instance.new("TextButton", left)
+    b.Size = UDim2.new(1,0,0,50)
+    b.Position = UDim2.new(0,0,0,(i-1)*50)
+    b.Text = v
+    b.BackgroundColor3 = Color3.fromRGB(35,35,35)
+    b.TextColor3 = Color3.fromRGB(255,255,255)
+    tabButtons[v] = b
 end
 
-local SubtabFrame = Instance.new("Frame", Main)
-SubtabFrame.Size, SubtabFrame.Position, SubtabFrame.BackgroundColor3 = UDim2.new(0,120,1,0), UDim2.new(0,100,0,0), Color3.fromRGB(35,35,35)
+-- Subtabs & checkboxes
+local subframes = {}
+local subInfo = {
+    Aimbot = {"General","Other"},
+    Visual = {"Esp","World","Other"}
+}
 
-local ContentFrame = Instance.new("Frame", Main)
-ContentFrame.Size, ContentFrame.Position, ContentFrame.BackgroundColor3 = UDim2.new(1,-220,1,0), UDim2.new(0,220,0,0), Color3.fromRGB(25,25,25)
-
-local function Draw()
-    SubtabFrame:ClearAllChildren()
-    ContentFrame:ClearAllChildren()
-    -- Subtabs
-    for i,s in pairs(Subtabs[SelectedTab]) do
-        local b = Instance.new("TextButton", SubtabFrame)
-        b.Text, b.Size, b.Position, b.BackgroundColor3 = s, UDim2.new(1,0,0,40), UDim2.new(0,0,0,(i-1)*40), SelectedSubtab==s and Color3.fromRGB(70,70,70) or Color3.fromRGB(50,50,50)
-        b.MouseButton1Click:Connect(function() SelectedSubtab=s end)
+local function createSubTab(parent, name)
+    local f = Instance.new("Frame", parent)
+    f.Size = UDim2.new(1,-100,1,0)
+    f.Position = UDim2.new(0,100,0,0)
+    f.BackgroundColor3 = Color3.fromRGB(25,25,25)
+    f.Visible = false
+    
+    local buttons = {}
+    for i,s in pairs(subInfo[name] or {}) do
+        local sb = Instance.new("TextButton", f)
+        sb.Size = UDim2.new(0,100,0,30)
+        sb.Position = UDim2.new(0,0,0,(i-1)*30)
+        sb.Text = s
+        sb.BackgroundColor3 = Color3.fromRGB(50,50,50)
+        sb.TextColor3 = Color3.fromRGB(255,255,255)
+        buttons[s] = sb
     end
-    -- Checkboxes
-    local y=0
-    for i,s in pairs(Subtabs[SelectedTab]) do
-        if s==SelectedSubtab then
-            for j=1,3 do
-                local cb = Instance.new("TextButton", ContentFrame)
-                local name = s.."Option"..j
-                CheckboxStates[name] = CheckboxStates[name] or false
-                cb.Text, cb.Size, cb.Position = CheckboxStates[name] and "✅"..name or "❌"..name, UDim2.new(0,200,0,30), UDim2.new(0,10,0,y)
-                cb.MouseButton1Click:Connect(function()
-                    CheckboxStates[name] = not CheckboxStates[name]
-                end)
-                y=y+35
-            end
+    subframes[name] = f
+end
+
+for t,_ in pairs(tabButtons) do
+    createSubTab(frame,t)
+end
+
+-- Checkbox template
+local function addCheckbox(parent,text,y)
+    local cb = Instance.new("TextButton", parent)
+    cb.Size = UDim2.new(0,150,0,30)
+    cb.Position = UDim2.new(0,120,0,y)
+    cb.Text = "[ ] "..text
+    cb.BackgroundColor3 = Color3.fromRGB(40,40,40)
+    cb.TextColor3 = Color3.fromRGB(255,255,255)
+    local toggled = false
+    cb.MouseButton1Click:Connect(function()
+        toggled = not toggled
+        cb.Text = (toggled and "[X] " or "[ ] ")..text
+    end)
+end
+
+-- Add example checkboxes to subtabs
+for tab,sub in pairs(subframes) do
+    local y = 0
+    for _,b in pairs(sub:GetChildren()) do
+        if b:IsA("TextButton") then
+            addCheckbox(sub,"Option "..y,y*40+10)
+            y=y+1
         end
     end
 end
-rs.RenderStepped:Connect(Draw)
 
--- Toggle and delete
-uis.InputBegan:Connect(function(input,gpe)
-    if gpe then return end
-    if input.KeyCode==Enum.KeyCode.Insert then Main.Visible=not Main.Visible
-    elseif input.KeyCode==Enum.KeyCode.Delete then ScreenGui:Destroy() end
+-- Tab switching
+for name,btn in pairs(tabButtons) do
+    btn.MouseButton1Click:Connect(function()
+        for _,f in pairs(subframes) do f.Visible = false end
+        subframes[name].Visible = true
+    end)
+end
+
+-- Hotkeys
+local menuOpen = true
+UIS.InputBegan:Connect(function(input)
+    if input.KeyCode==Enum.KeyCode.Insert then
+        menuOpen = not menuOpen
+        frame.Visible = menuOpen
+    elseif input.KeyCode==Enum.KeyCode.Delete then
+        menu:Destroy()
+    end
 end)
+
+frame.Visible = true
