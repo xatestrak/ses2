@@ -1,1 +1,70 @@
+-- Create the ScreenGui
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "DraggableMenu"
+screenGui.Parent = playerGui
+
+-- Create the main frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 150)
+frame.Position = UDim2.new(0.5, -100, 0.5, -75)
+frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+-- Create a title bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+titleBar.Parent = frame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 1, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Draggable Menu"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 18
+titleLabel.Parent = titleBar
+
+-- Draggable functionality
+local dragging = false
+local dragInput, mousePos, framePos
+
+titleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		mousePos = input.Position
+		framePos = frame.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - mousePos
+		frame.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X,
+			framePos.Y.Scale, framePos.Y.Offset + delta.Y)
+	end
+end)
+
+-- Delete menu on DEL key press
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.Delete then
+		screenGui:Destroy()
+	end
+end)
